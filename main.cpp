@@ -1,22 +1,23 @@
 /*
- Copyright 2024 cachewave
-
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
- http://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
-*/
+ * Copyright 2024 cachewave
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include <iostream>
 #include <algorithm>
 #include <fstream>
+#include <cstring>
 
 unsigned char tape[512000] = {0};
 unsigned char* ptr = tape;
@@ -24,35 +25,40 @@ unsigned char* ptr2 = tape;
 unsigned char hold = 255;
 
 /*
- Hold is set to 255
- others set to 0
+ * Hold is set to 255
+ * others set to 0
+ * all of them are unsigned char (0-255)
+ *
+ * 1 - Modify main pointer by helper pointer
+ * 2 - Move main pointer by helper pointer
+ *
+ * 3 - Swaps main pointer and helper pointer (value)
+ *
+ * 4 - Move helper pointer by main pointer's value
+ * 5 - Move helper pointer by negative main pointer
+ *
+ * 6 - Set helper pointer to program counter
+ * 7 - Set program counter to helper pointer
+ *
+ * 8 - Jump to next line if helper pointer bigger than main pointer, otherwise jump to start without resetting anything
+ * 9 - Jump to next line if main pointer bigger than helper pointer, otherwise jump to start without resetting anything
+ *
+ * A - Jump to next line if main pointer bigger than the hold value, otherwise jump to start without resetting anything
+ * B - Jump to next line if main pointer smaller than the hold value, otherwise jump to start without resetting anything
+ *
+ * C - Sets the hold value to main pointer
+ * D - Sets the main pointer to the hold value
+ *
+ * E - Request input and set main pointer to it
+ *
+ * F - Output main pointer value
+ *
+ * --- Extensions
+ *
+ * G - Swaps main pointer and helper pointer (position)
+ */
 
- 1 - Modify main pointer by helper pointer
- 2 - Move main pointer by helper pointer
-
- 3 - Swaps main pointer and helper pointer (value)
-
- 4 - Set helper pointer's position to main pointer
- 5 - Move helper pointer by negative main pointer
-
- 6 - Set helper pointer to program counter
- 7 - Set program counter to helper pointer
-
- 8 - Jump to next line if helper pointer bigger than main pointer, otherwise jump to start without resetting anything
- 9 - Jump to next line if main pointer bigger than helper pointer, otherwise jump to start without resetting anything
-
- A - Jump to next line if main pointer bigger than the hold value, otherwise jump to start without resetting anything
- B - Jump to next line if main pointer smaller than the hold value, otherwise jump to start without resetting anything
-
- C - Sets the hold value to main pointer
- D - Sets the main pointer to the hold value
-
- E - Request user input and set main pointer to it
-
- F - Output main pointer value
-*/
-
-// https://stackoverflow.com/a/868894   thanks
+// https://stackoverflow.com/a/868894
 char* getCmdOption(char ** begin, char ** end, const std::string & option)
 {
     char ** itr = std::find(begin, end, option);
@@ -76,10 +82,17 @@ void kelvin(char* input)
     char code[32000];
     file.get(code,32000);
 
-    char command;
-    unsigned int pc;
+    std::memcpy(tape, code, 32000 * sizeof(unsigned char));
 
-    for (pc = 0; code[pc] != 0; ++pc)
+    ptr += 32000;
+    ptr2 += 32000;
+
+    char command;
+    unsigned int pc = 0;
+
+    command = code[pc];
+
+    while (command != 0)
     {
         command = code[pc];
 
@@ -104,7 +117,7 @@ void kelvin(char* input)
             }
             case '4':
             {
-                ptr2 = ptr;
+                ptr2 += *ptr;
                 break;
             }
             case '5':
@@ -170,6 +183,29 @@ void kelvin(char* input)
                 putchar(*ptr);
                 break;
             }
+            case 'G': // 16
+            {
+                unsigned char* tmp = ptr;
+                ptr = ptr2;
+                ptr2 = tmp;
+                break;
+            }
+        }
+
+        switch (command)
+        {
+            default:
+                pc++;
+                break;
+
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+            case 'A':
+            case 'B':
+                break;
+
         }
     }
 }
